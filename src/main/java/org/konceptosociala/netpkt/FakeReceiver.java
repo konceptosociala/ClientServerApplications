@@ -16,11 +16,31 @@ public class FakeReceiver implements Receiver {
     public void receiveMessage() {
         for (int i = 0; i < numMessages; i++) {
             try {
-                // Генерувати випадковий пакет (наприклад, "запит складу")
                 Message msg = new Message();
-                msg.cType = rnd.nextInt(6) + 1; // 1..6 типи команд
+                msg.cType = rnd.nextInt(6) + 1; 
                 msg.bUserId = rnd.nextInt(5) + 1;
-                msg.payload = ("{\"product\":\"Гречка\", \"amount\":" + rnd.nextInt(10) + "}").getBytes();
+                switch (msg.cType) {
+                    case 1:
+                        msg.payload = "Гречка".getBytes();
+                        break;
+                    case 2:
+                        msg.payload = ("Гречка:" + (rnd.nextInt(5) + 1)).getBytes();
+                        break;
+                    case 3:
+                        msg.payload = ("Гречка:" + (rnd.nextInt(10) + 1)).getBytes();
+                        break;
+                    case 4:
+                        msg.payload = ("Група" + (rnd.nextInt(3) + 1)).getBytes();
+                        break;
+                    case 5:
+                        msg.payload = ("Група" + (rnd.nextInt(3) + 1) + ":Гречка").getBytes();
+                        break;
+                    case 6:
+                        msg.payload = ("Гречка:" + (10 + rnd.nextInt(90)) + ".0").getBytes();
+                        break;
+                    default:
+                        msg.payload = "{}".getBytes();
+                }
 
                 byte[] encrypted = CryptoUtil.encrypt(msg.toBytes());
                 queue.put(encrypted);
