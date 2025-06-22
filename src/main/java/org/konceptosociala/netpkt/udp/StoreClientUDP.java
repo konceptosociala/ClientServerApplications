@@ -1,11 +1,13 @@
 package org.konceptosociala.netpkt.udp;
 
 import java.net.*;
-import java.util.Arrays;
-
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
 import org.konceptosociala.netpkt.packet.*;
 
 public class StoreClientUDP {
+    private static AtomicLong pktId = new AtomicLong(0);
+
     private DatagramSocket socket;
     private InetAddress serverAddr;
     private int serverPort;
@@ -14,28 +16,25 @@ public class StoreClientUDP {
         socket = new DatagramSocket();
         serverAddr = InetAddress.getByName(host);
         serverPort = port;
-        socket.setSoTimeout(1000); // 1 секунда на відповідь
+        socket.setSoTimeout(3000); // 3 seconds timeout
     }
 
-    public boolean sendPacketWithRetry(Packet pkt, int retries) throws Exception {
-        byte[] pktBytes = PacketBuilder.build(pkt.message, pkt.bSrc, pkt.bPktId);
-        DatagramPacket dp = new DatagramPacket(pktBytes, pktBytes.length, serverAddr, serverPort);
-
-        for (int i = 0; i < retries; i++) {
+    public boolean sendPacket(byte[] pkt) {
+        try {
+            DatagramPacket dp = new DatagramPacket(pkt, pkt.length, serverAddr, serverPort);
             socket.send(dp);
-            try {
-                byte[] buf = new byte[2048];
-                DatagramPacket resp = new DatagramPacket(buf, buf.length);
-                socket.receive(resp);
-                Packet answer = Packet.fromBytes(Arrays.copyOf(resp.getData(), resp.getLength()));
-                System.out.println("Response: " + new String(answer.message.payload));
-                return true;
-            } catch (SocketTimeoutException ex) {
-                System.out.println("No response, retrying " + (i+1));
-            }
+
+            byte[] buf = new byte[2048];
+            DatagramPacket resp = new DatagramPacket(buf, buf.length);
+            socket.receive(resp);
+
+            Packet answer = Packet.fromBytes(java.util.Arrays.copyOf(resp.getData(), resp.getLength()));
+            System.out.println("Received response: " + new String(answer.message.payload));
+            return true;
+        } catch (Exception ex) {
+            System.out.println("No response or error: " + ex.getMessage());
+            return false;
         }
-        System.out.println("Failed after retries");
-        return false;
     }
 
     public void close() {
@@ -44,18 +43,43 @@ public class StoreClientUDP {
 
     public static void main(String[] args) throws Exception {
         StoreClientUDP client = new StoreClientUDP("localhost", 5556);
+        Random random = new Random();
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < random.nextInt(1, 6); i++) {
             Message msg = new Message();
-            msg.cType = 1;
-            msg.bUserId = 1;
-            msg.payload = "test".getBytes();
-            Packet pkt = new Packet();
-            pkt.message = msg;
-            pkt.bSrc = 1;
-            pkt.bPktId = i;
+            msg.cType = random.nextInt(6) + 1; 
+            msg.bUserId = random.nextInt(5) + 1;
+            switch (msg.cType) {
+                case 1:
+                    msg.payload = "Гречка".getBytes();
+                    break;
+                case 2:
+                    msg.payload = ("Гречка:" + (random.nextInt(5) + 1)).getBytes();
+                    break;
+                case 3:
+                    msg.payload = ("Гречка:" + (random.nextInt(10) + 1)).getBytes();
+                    break;
+                case 4:
+                    msg.payload = ("Група" + (random.nextInt(3) + 1)).getBytes();
+                    break;
+                case 5:
+                    msg.payload = ("Група" + (random.nextInt(3) + 1) + ":Гречка").getBytes();
+                    break;
+                case 6:
+                    msg.payload = ("Гречка:" + (10 + random.nextInt(90)) + ".0").getBytes();
+                    break;
+                default:
+                    msg.payload = "{}".getBytes();
+            }
 
-            client.sendPacketWithRetry(pkt, 3);
+            byte[] pkt = new PacketBuilder()
+                .msg(msg)
+                .bSrc((byte) random.nextInt(0, 255))
+                .pktId(pktId.incrementAndGet())
+                .build();
+
+            client.sendPacket(pkt);
+            Thread.sleep(250);
         }
         client.close();
     }

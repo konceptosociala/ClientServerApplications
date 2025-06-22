@@ -24,7 +24,7 @@ public class StoreClientTCP {
             Thread.sleep(3000);
         }
 
-        for (int i = 0; i < 999; i++) {
+        for (int i = 0; i < random.nextInt(1, 6); i++) {
             Message msg = new Message();
             msg.cType = random.nextInt(6) + 1; 
             msg.bUserId = random.nextInt(5) + 1;
