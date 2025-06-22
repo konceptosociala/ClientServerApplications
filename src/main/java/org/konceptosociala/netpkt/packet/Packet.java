@@ -1,4 +1,4 @@
-package org.konceptosociala.netpkt;
+package org.konceptosociala.netpkt.packet;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

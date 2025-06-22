@@ -1,10 +1,35 @@
-package org.konceptosociala.netpkt;
+package org.konceptosociala.netpkt.packet;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 public class PacketBuilder {
-    public static byte[] build(Message msg, byte bSrc, long pktId) throws Exception {
+    private Message msg;
+    private byte bSrc;
+    private long pktId;
+
+    public PacketBuilder() {
+        this.msg = new Message();
+        this.bSrc = 0; // Default value, can be set later
+        this.pktId = 0; // Default value, can be set later
+    }
+
+    public PacketBuilder msg(Message msg) {
+        this.msg = msg;
+        return this;
+    }
+
+    public PacketBuilder bSrc(byte bSrc) {
+        this.bSrc = bSrc;
+        return this;
+    }
+
+    public PacketBuilder pktId(long pktId) {
+        this.pktId = pktId;
+        return this;
+    }
+
+    public byte[] build() throws Exception {
         byte[] msgBytes = msg.toBytes();
         byte[] encryptedMsg = CryptoUtil.encrypt(msgBytes);
 

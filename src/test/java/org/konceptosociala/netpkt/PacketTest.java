@@ -1,5 +1,9 @@
 package org.konceptosociala.netpkt;
 
+import org.konceptosociala.netpkt.packet.Message;
+import org.konceptosociala.netpkt.packet.Packet;
+import org.konceptosociala.netpkt.packet.PacketBuilder;
+
 import junit.framework.TestCase;
 
 public class PacketTest extends TestCase {

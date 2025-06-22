@@ -1,4 +1,4 @@
-package org.konceptosociala.netpkt;
+package org.konceptosociala.netpkt.packet;
 
 public class CRC16 {
     public static short crc16(byte[] bytes) {

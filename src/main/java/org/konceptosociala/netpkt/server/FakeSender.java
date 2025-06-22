@@ -1,7 +1,10 @@
-package org.konceptosociala.netpkt;
+package org.konceptosociala.netpkt.server;
 
 import java.net.InetAddress;
 import java.util.Arrays;
+
+import org.konceptosociala.netpkt.packet.CryptoUtil;
+import org.konceptosociala.netpkt.packet.Message;
 
 public class FakeSender implements Sender {
     public void sendMessage(byte[] message, InetAddress target) {

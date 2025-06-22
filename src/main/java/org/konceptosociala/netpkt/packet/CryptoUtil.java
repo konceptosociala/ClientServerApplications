@@ -1,4 +1,4 @@
-package org.konceptosociala.netpkt;
+package org.konceptosociala.netpkt.packet;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;

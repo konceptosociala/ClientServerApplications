@@ -1,8 +1,10 @@
-package org.konceptosociala.netpkt;
+package org.konceptosociala.netpkt.server;
 
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.konceptosociala.netpkt.packet.Message;
 
 public class WarehouseProcessor implements Processor {
     private final ConcurrentHashMap<String, AtomicInteger> stock = new ConcurrentHashMap<>();

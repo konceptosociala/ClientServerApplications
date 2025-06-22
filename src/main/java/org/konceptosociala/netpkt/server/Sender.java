@@ -1,4 +1,4 @@
-package org.konceptosociala.netpkt;
+package org.konceptosociala.netpkt.server;
 
 import java.net.InetAddress;
 

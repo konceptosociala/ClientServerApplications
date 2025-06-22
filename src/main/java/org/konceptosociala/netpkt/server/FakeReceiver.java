@@ -1,7 +1,10 @@
-package org.konceptosociala.netpkt;
+package org.konceptosociala.netpkt.server;
 
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
+
+import org.konceptosociala.netpkt.packet.CryptoUtil;
+import org.konceptosociala.netpkt.packet.Message;
 
 public class FakeReceiver implements Receiver {
     private final BlockingQueue<byte[]> queue;

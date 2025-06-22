@@ -1,6 +1,8 @@
-package org.konceptosociala.netpkt;
+package org.konceptosociala.netpkt.server;
 
 import java.util.concurrent.*;
+
+import org.konceptosociala.netpkt.packet.Message;
 
 public class ServerApp {
     public static void main(String[] args) throws Exception {
