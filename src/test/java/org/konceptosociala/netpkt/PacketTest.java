@@ -14,7 +14,11 @@ public class PacketTest extends TestCase {
         msg.bUserId = 123;
         msg.payload = "{\"hello\":\"world\"}".getBytes();
 
-        byte[] packetBytes = PacketBuilder.build(msg, (byte)2, 1001L);
+        byte[] packetBytes = new PacketBuilder()
+            .msg(msg)
+            .bSrc((byte) 2)
+            .pktId(1001L)
+            .build();
 
         Packet pkt = Packet.fromBytes(packetBytes);
 
