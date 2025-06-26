@@ -7,7 +7,7 @@ function auth() {
       const token = btoa(login + ':' + password);
 
       $.ajax({
-         url: 'http://localhost:8211/',
+         url: 'http://localhost:8211/auth',
          method: 'GET',
          beforeSend: function (xhr) {
             xhr.setRequestHeader('Authorization', 'Basic ' + token);
