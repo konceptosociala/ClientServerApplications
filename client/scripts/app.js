@@ -1,9 +1,5 @@
 function app() {
    const token = localStorage.getItem('userToken');
-   if (!token) {
-      window.location.href = 'login.html';
-      return;
-   }
 
    $.ajaxSetup({
       beforeSend: function (xhr) {
@@ -14,180 +10,188 @@ function app() {
    loadGroups();
    loadProducts();
 
-   $('#search-btn').on('click', function () {
-      const query = $('#search-input').val();
-      loadProducts(query);
-   });
+   $('#search-btn').on('click', searchProducts);
+   $('#add-group').on('click', showAddGroupModal);
+   $('#save-group-btn').on('click', saveGroup);
+   $('#add-product').on('click', showAddProductModal);
+   $('#save-product-btn').on('click', saveProduct);
+   $('#restock-product').on('click', restockProduct);
+   $('#sell-product').on('click', sellProduct);
+   $('#logout').on('click', logoutUser);
+}
 
-   $('#add-group').on('click', function () {
-      $('#groupModalLabel').text('Додати групу товарів');
-      $('#group-name').val('');
-      $('#group-description').val('');
-      $('#groupModal').data('mode', 'add').modal('show');
-   });
+function searchProducts() {
+   const query = $('#search-input').val();
+   loadProducts(query);
+}
 
-   $('#save-group-btn').on('click', function () {
-      const name = $('#group-name').val().trim();
-      const desc = $('#group-description').val().trim();
-      if (!name) {
-         alert('Введіть назву групи');
-         return;
+function showAddGroupModal() {
+   $('#groupModalLabel').text('Додати групу товарів');
+   $('#group-name').val('');
+   $('#group-description').val('');
+   $('#groupModal').data('mode', 'add').modal('show');
+}
+
+function saveGroup() {
+   const name = $('#group-name').val().trim();
+   const desc = $('#group-description').val().trim();
+   if (!name) {
+      alert('Введіть назву групи');
+      return;
+   }
+   const mode = $('#groupModal').data('mode');
+   const method = mode === 'edit' ? 'PUT' : 'POST';
+
+   $.ajax({
+      url: 'http://localhost:8211/groups',
+      method: method,
+      contentType: 'application/json',
+      data: JSON.stringify({ name, description: desc }),
+      success: function () {
+         $('#groupModal').modal('hide');
+         $('#group-name').val('');
+         $('#group-description').val('');
+         loadGroups();
+      },
+      error: function () {
+         alert('Не вдалося зберегти групу (можливо, така назва вже існує)');
       }
-      const mode = $('#groupModal').data('mode');
-      const method = mode === 'edit' ? 'PUT' : 'POST';
-
-      $.ajax({
-         url: 'http://localhost:8211/groups',
-         method: method,
-         contentType: 'application/json',
-         data: JSON.stringify({ name, description: desc }),
-         success: function () {
-            $('#groupModal').modal('hide');
-            $('#group-name').val('');
-            $('#group-description').val('');
-            loadGroups();
-         },
-         error: function () {
-            alert('Не вдалося зберегти групу (можливо, така назва вже існує)');
-         }
-      });
    });
+}
 
-   $('#add-product').on('click', function () {
-      $('#productModalLabel').text('Додати товар');
-      $('#productModal').data('mode', 'add');
-      $('#product-name').prop('readonly', false).val('');
-      $('#product-description').val('');
-      $('#product-manufacturer').val('');
-      $('#product-quantity').val('');
-      $('#product-price').val('');
-      $('#product-group').val('');
-      loadGroupOptions();
-      $('#productModal').modal('show');
+function showAddProductModal() {
+   $('#productModalLabel').text('Додати товар');
+   $('#productModal').data('mode', 'add');
+   $('#product-name').prop('readonly', false).val('');
+   $('#product-description').val('');
+   $('#product-manufacturer').val('');
+   $('#product-quantity').val('');
+   $('#product-price').val('');
+   $('#product-group').val('');
+   loadGroupOptions();
+   $('#productModal').modal('show');
+}
+
+function saveProduct() {
+   const name = $('#product-name').val().trim();
+   const desc = $('#product-description').val().trim();
+   const manufacturer = $('#product-manufacturer').val().trim();
+   const quantity = parseInt($('#product-quantity').val());
+   const price = parseFloat($('#product-price').val());
+   const group = $('#product-group').val();
+
+   if (!name || isNaN(quantity) || isNaN(price) || !group) {
+      alert('Будь ласка, заповніть всі поля правильно');
+      return;
+   }
+
+   if (quantity < 0 || price < 0) {
+      alert('Кількість та ціна не можуть бути від\'ємними');
+      return;
+   }
+
+   const mode = $('#productModal').data('mode');
+   const url = mode === 'edit' ? `http://localhost:8211/products/${encodeURIComponent(name)}` : 'http://localhost:8211/products';
+   const method = mode === 'edit' ? 'PUT' : 'POST';
+
+   const payload = {
+      name,
+      description: desc,
+      manufacturer,
+      quantity,
+      price,
+      group
+   };
+   if (mode === 'edit') delete payload.name;
+
+   $.ajax({
+      url: url,
+      method: method,
+      contentType: 'application/json',
+      data: JSON.stringify(payload),
+      success: function () {
+         $('#productModal').modal('hide');
+         loadProducts();
+      },
+      error: function () {
+         alert('Не вдалося зберегти товар');
+      }
    });
+}
 
-   $('#save-product-btn').on('click', function () {
-      const name = $('#product-name').val().trim();
-      const desc = $('#product-description').val().trim();
-      const manufacturer = $('#product-manufacturer').val().trim();
-      const quantity = parseInt($('#product-quantity').val());
-      const price = parseFloat($('#product-price').val());
-      const group = $('#product-group').val();
+function restockProduct() {
+   const productName = prompt('Введіть назву товару, який потрібно прийняти на склад:');
+   if (!productName) return;
+   const addQuantity = parseInt(prompt('Кількість товару для прийому:'));
+   if (isNaN(addQuantity) || addQuantity <= 0) return alert('Некоректна кількість');
 
-      if (!name || isNaN(quantity) || isNaN(price) || !group) {
-         alert('Будь ласка, заповніть всі поля правильно');
-         return;
-      }
-
-      if (quantity < 0 || price < 0) {
-         alert('Кількість та ціна не можуть бути від\'ємними');
-         return;
-      }
-
-      const mode = $('#productModal').data('mode');
-      const url = mode === 'edit' ? `http://localhost:8211/products/${encodeURIComponent(name)}` : 'http://localhost:8211/products';
-      const method = mode === 'edit' ? 'PUT' : 'POST';
+   $.get('http://localhost:8211/products?search=' + encodeURIComponent(productName), function (products) {
+      const product = products.find(p => p.name === productName);
+      if (!product) return alert('Товар не знайдено');
 
       const payload = {
-         name,
-         description: desc,
-         manufacturer,
-         quantity,
-         price,
-         group
-      };
-      if (mode === 'edit') delete payload.name;
+         description: product.description,
+         manufacturer: product.manufacturer,
+         quantity: product.quantity,
+         price: product.price,
+         group: product.group,
+      }
 
+      payload.quantity += addQuantity;
       $.ajax({
-         url: url,
-         method: method,
+         url: `http://localhost:8211/products/${encodeURIComponent(product.name)}`,
+         method: 'PUT',
          contentType: 'application/json',
          data: JSON.stringify(payload),
          success: function () {
-            $('#productModal').modal('hide');
+            loadProducts();
+         },
+         error: function (err) {
+            alert('Не вдалося оновити товар:'+JSON.stringify(err));
+         }
+      });
+   });
+}
+
+function sellProduct() {
+   const productName = prompt('Введіть назву товару, який потрібно списати:');
+   if (!productName) return;
+   const removeQuantity = parseInt(prompt('Кількість товару для списання:'));
+   if (isNaN(removeQuantity) || removeQuantity <= 0) return alert('Некоректна кількість');
+
+   $.get('http://localhost:8211/products?search=' + encodeURIComponent(productName), function (products) {
+      const product = products.find(p => p.name === productName);
+      if (!product) return alert('Товар не знайдено');
+      if (product.quantity < removeQuantity) return alert('Недостатньо товару на складі');
+
+      const payload = {
+         description: product.description,
+         manufacturer: product.manufacturer,
+         quantity: product.quantity,
+         price: product.price,
+         group: product.group,
+      }
+
+      payload.quantity -= removeQuantity;
+      $.ajax({
+         url: `http://localhost:8211/products/${encodeURIComponent(product.name)}`,
+         method: 'PUT',
+         contentType: 'application/json',
+         data: JSON.stringify(payload),
+         success: function () {
             loadProducts();
          },
          error: function () {
-            alert('Не вдалося зберегти товар');
+            alert('Не вдалося оновити товар');
          }
       });
    });
+}
 
-   $('#restock-product').on('click', function () {
-      const productName = prompt('Введіть назву товару, який потрібно прийняти на склад:');
-      if (!productName) return;
-      const addQuantity = parseInt(prompt('Кількість товару для прийому:'));
-      if (isNaN(addQuantity) || addQuantity <= 0) return alert('Некоректна кількість');
-
-      $.get('http://localhost:8211/products?search=' + encodeURIComponent(productName), function (products) {
-         const product = products.find(p => p.name === productName);
-         if (!product) return alert('Товар не знайдено');
-
-         const payload = {
-            description: product.description,
-            manufacturer: product.manufacturer,
-            quantity: product.quantity,
-            price: product.price,
-            group: product.group,
-         }
-
-         payload.quantity += addQuantity;
-         $.ajax({
-            url: `http://localhost:8211/products/${encodeURIComponent(product.name)}`,
-            method: 'PUT',
-            contentType: 'application/json',
-            data: JSON.stringify(payload),
-            success: function () {
-               loadProducts();
-            },
-            error: function (err) {
-               alert('Не вдалося оновити товар:'+JSON.stringify(err));
-            }
-         });
-      });
-   });
-
-   $('#sell-product').on('click', function () {
-      const productName = prompt('Введіть назву товару, який потрібно списати:');
-      if (!productName) return;
-      const removeQuantity = parseInt(prompt('Кількість товару для списання:'));
-      if (isNaN(removeQuantity) || removeQuantity <= 0) return alert('Некоректна кількість');
-
-      $.get('http://localhost:8211/products?search=' + encodeURIComponent(productName), function (products) {
-         const product = products.find(p => p.name === productName);
-         if (!product) return alert('Товар не знайдено');
-         if (product.quantity < removeQuantity) return alert('Недостатньо товару на складі');
-
-         const payload = {
-            description: product.description,
-            manufacturer: product.manufacturer,
-            quantity: product.quantity,
-            price: product.price,
-            group: product.group,
-         }
-
-         payload.quantity -= removeQuantity;
-         $.ajax({
-            url: `http://localhost:8211/products/${encodeURIComponent(product.name)}`,
-            method: 'PUT',
-            contentType: 'application/json',
-            data: JSON.stringify(payload),
-            success: function () {
-               loadProducts();
-            },
-            error: function () {
-               alert('Не вдалося оновити товар');
-            }
-         });
-      });
-   });
-
-   $('#logout').on('click', function(e) {
-      e.preventDefault();
-
-      localStorage.removeItem('userToken');
-      location.reload(); 
-   })
+function logoutUser(e) {
+   e.preventDefault();
+   localStorage.removeItem('userToken');
+   location.reload(); 
 }
 
 function loadGroups() {
