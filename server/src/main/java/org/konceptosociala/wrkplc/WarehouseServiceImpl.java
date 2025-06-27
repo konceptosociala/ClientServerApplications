@@ -6,9 +6,36 @@ import java.sql.*;
 
 public class WarehouseServiceImpl implements WarehouseService {
 
-    private final String dbUrl = "jdbc:sqlite:warehouse.db";
+    private final String dbUrl;
+
+    public WarehouseServiceImpl(String url) {
+        dbUrl = url;
+        try (Connection conn = DriverManager.getConnection(url);
+             Statement stmt = conn.createStatement()) {
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS groups (
+                    name TEXT PRIMARY KEY,
+                    description TEXT
+                );
+            """);
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS products (
+                    name TEXT PRIMARY KEY,
+                    description TEXT,
+                    manufacturer TEXT,
+                    quantity INTEGER,
+                    price REAL,
+                    group_name TEXT,
+                    FOREIGN KEY (group_name) REFERENCES groups(name) ON DELETE CASCADE
+                );
+            """);
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to initialize database", e);
+        }
+    }
 
     public WarehouseServiceImpl() {
+        dbUrl = "jdbc:sqlite:warehouse.db";
         try (Connection conn = DriverManager.getConnection(dbUrl);
              Statement stmt = conn.createStatement()) {
             stmt.execute("""
